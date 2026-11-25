@@ -533,7 +533,7 @@ print(df.groupby('churn')[remaining_metrics].mean().round(2))
 
 
 ```python
-# Summary tables for payment failures and support tickets
+# Exact churn breakdown tables for payment failures and support tickets
 for col in ['payment_failures', 'support_tickets']:
     breakdown = (
         df.groupby(col)
@@ -543,10 +543,9 @@ for col in ['payment_failures', 'support_tickets']:
           )
           .reset_index()
     )
-    breakdown['churn_share_pct'] = (
-        breakdown['churned_customers'] / breakdown['total_customers'] * 100
-    ).round(2)
-    breakdown['pp_change'] = breakdown['churn_share_pct'].diff().round(2)
+    raw_share = breakdown['churned_customers'] / breakdown['total_customers'] * 100
+    breakdown['churn_share_pct'] = raw_share.round(2)
+    breakdown['pp_change'] = raw_share.diff().round(2)
     print(f"\n=== Churn Breakdown by {col} ===")
     display(breakdown)
 ```
@@ -604,7 +603,7 @@ for col in ['payment_failures', 'support_tickets']:
       <td>478</td>
       <td>307</td>
       <td>64.23</td>
-      <td>24.11</td>
+      <td>24.10</td>
     </tr>
     <tr>
       <th>3</th>
@@ -612,7 +611,7 @@ for col in ['payment_failures', 'support_tickets']:
       <td>471</td>
       <td>316</td>
       <td>67.09</td>
-      <td>2.86</td>
+      <td>2.87</td>
     </tr>
     <tr>
       <th>4</th>
@@ -620,7 +619,7 @@ for col in ['payment_failures', 'support_tickets']:
       <td>453</td>
       <td>301</td>
       <td>66.45</td>
-      <td>-0.64</td>
+      <td>-0.65</td>
     </tr>
     <tr>
       <th>5</th>
@@ -728,7 +727,7 @@ for col in ['payment_failures', 'support_tickets']:
       <td>289</td>
       <td>185</td>
       <td>64.01</td>
-      <td>0.24</td>
+      <td>0.25</td>
     </tr>
     <tr>
       <th>8</th>
@@ -736,7 +735,7 @@ for col in ['payment_failures', 'support_tickets']:
       <td>290</td>
       <td>198</td>
       <td>68.28</td>
-      <td>4.27</td>
+      <td>4.26</td>
     </tr>
   </tbody>
 </table>
@@ -746,10 +745,10 @@ for col in ['payment_failures', 'support_tickets']:
 ## Summary
 
 - **Baseline Churn:** 57.32% (1,605 of 2,800 subscribers).
-- **Non-Drivers:** Subscription tier (`plan_type`) and account age (`tenure_months`) show nearly identical churn shares across active and churned groups.
+- **Non-Drivers:** Subscription tier (`plan_type`) shows a nearly flat churn share across plans, and median tenure was 18 months in both groups.
 - **Top 4 Associated Churn Drivers:**
   1. **Account Inactivity:** Last login exceeding 30 days (median 34 days for churned users vs. 22 days for active users).
   2. **Support Friction:** Reaching 4 to 5+ support tickets (median 5 tickets vs. 3 for active; churn share ranges from 45.80%–55.99% across 0–4 tickets before rising to 68.03% at 5 tickets).
-  3. **Billing Failures:** The largest single-step jump occurs between 1 failed payment (199 of 496, 40.12%) and 2 failed payments (307 of 478, 64.23%)—a 24.1 percentage-point increase—reaching 66.11% across all 808 customers with 2+ failures.
+  3. **Billing Failures:** The largest single-step jump occurs between 1 failed payment (199 of 496, 40.12%) and 2 failed payments (307 of 478, 64.23%)—a 24.10 percentage-point increase. Among 1,862 customers with two or more failed payments, 1,231 (66.11%) were marked churned. Of those 1,862 customers, 808 also had five or more support tickets.
   4. **Low Weekly Usage:** Dropping below 8 hours/week (25% of churned users log 5.1 hours or less).
 - **Proposed Interventions to A/B Test:** Because this dataset is a cross-sectional snapshot, these findings reflect behavioral associations rather than proven causation. Priority experiments include testing proactive billing recovery workflows immediately after a **2nd failed payment** and automated re-engagement nudges after **25 days of inactivity**.

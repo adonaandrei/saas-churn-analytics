@@ -42,14 +42,11 @@ Both report pages use synchronized **Signup Date** and **Plan Type** slicers. Th
 | **Executive Overview** | Customer and churn counts, active accounts’ recorded monthly fees, churn share by plan and support ticket count, and customer signups by month. |
 | **Customer Behavior by Churn Status** | Churn share by payment failure count, recorded monthly fees for churned accounts, and comparisons of average weekly usage and days since last login within each plan. |
 
-<!-- After publishing all three dashboard files, remove the comment markers around the following block. -->
-<!--
 [Download the Power BI report (.pbix)](dashboard/saas-churn-analytics-visualization.pbix?raw=true)
 
 ![Executive Overview showing churn share by plan and support ticket count, plus monthly signups](dashboard/executive_overview.png)
 
 ![Customer Behavior by Churn Status showing payment failures, weekly usage and days since last login](dashboard/behavioral_drivers.png)
--->
 
 <details>
 <summary>Power BI model names and DAX measures</summary>
@@ -59,9 +56,9 @@ Both report pages use synchronized **Signup Date** and **Plan Type** slicers. Th
 | `Total Customers` | Total Customers | `DISTINCTCOUNT('clean_saas_data'[user_id])` | 2,800 |
 | `Total Churned` | Total Churned | `CALCULATE([Total Customers], 'clean_saas_data'[churn] = "Yes")` | 1,605 |
 | `Churn Rate %` | Customers Marked Churned (%) | See formula below | 57.32% |
-| `Total MRR` | Sum of recorded monthly fees across all accounts | `SUM('clean_saas_data'[monthly_fee])` | 1,215,800 |
-| `Active Monthly Fees` | Active Monthly Fees | `CALCULATE([Total MRR], 'clean_saas_data'[churn] = "No")` | 517,805 |
-| `Churned MRR` | Monthly Fees of Churned Accounts | `CALCULATE([Total MRR], 'clean_saas_data'[churn] = "Yes")` | 697,995 |
+| `Total Monthly Fees` | Sum of recorded monthly fees across all accounts | `SUM('clean_saas_data'[monthly_fee])` | 1,215,800 |
+| `Active Monthly Fees` | Active Monthly Fees | `CALCULATE([Total Monthly Fees], 'clean_saas_data'[churn] = "No")` | 517,805 |
+| `Churned Monthly Fees` | Monthly Fees of Churned Accounts | `CALCULATE([Total Monthly Fees], 'clean_saas_data'[churn] = "Yes")` | 697,995 |
 
 ```dax
 Churn Rate % =
@@ -87,6 +84,7 @@ IF('clean_saas_data'[churn] = "Yes", "Churned", "Active")
 
 | File or folder | Purpose |
 | --- | --- |
+| [dashboard/](dashboard/) | Published Power BI report (`saas-churn-analytics-visualization.pbix`) and dashboard screenshots (`executive_overview.png`, `behavioral_drivers.png`) |
 | [data/raw/customer_subscription_churn_usage_patterns.csv](data/raw/customer_subscription_churn_usage_patterns.csv) | Source snapshot read by the notebook |
 | [data/clean/clean_saas_data.csv](data/clean/clean_saas_data.csv) | Validated export used by Power BI |
 | [notebooks/saas_eda.ipynb](notebooks/saas_eda.ipynb) | Python analysis and saved outputs |
