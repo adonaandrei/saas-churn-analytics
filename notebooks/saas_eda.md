@@ -290,6 +290,14 @@ df.describe()
 
 
 
+## Data Validation & Date Parsing
+
+Because initial profiling confirmed that the raw dataset contains 2,800 unique customer IDs and zero missing values, no row deletion or imputation was required. This step validates data integrity and standardizes date formatting for downstream Power BI modeling:
+
+- **Data Validation:** Verified 2,800 unique `user_id` records with zero missing values across all 10 columns.
+- **Date Parsing:** Converted `signup_date` into a standardized `datetime64` (`YYYY-MM-DD`) format to support chronological cohort grouping.
+- **Clean Export:** Saved the validated dataset to `data/clean/clean_saas_data.csv` (`index=False`) as the single source of truth for Power BI.
+
 
 ```python
 # Convert signup_date s proper datetime format
@@ -344,7 +352,7 @@ print(churn_percentage)
 
 
     
-![png](saas_eda_files/saas_eda_9_0.png)
+![png](saas_eda_files/saas_eda_10_0.png)
     
 
 
@@ -384,7 +392,7 @@ print(plan_churn_rate.round(2))
 
 
     
-![png](saas_eda_files/saas_eda_11_0.png)
+![png](saas_eda_files/saas_eda_12_0.png)
     
 
 
@@ -417,7 +425,7 @@ print(df.groupby('churn')['support_tickets'].describe())
 
 
     
-![png](saas_eda_files/saas_eda_13_0.png)
+![png](saas_eda_files/saas_eda_14_0.png)
     
 
 
@@ -447,7 +455,7 @@ print(df.groupby('churn')['avg_weekly_usage_hours'].describe())
 
 
     
-![png](saas_eda_files/saas_eda_15_0.png)
+![png](saas_eda_files/saas_eda_16_0.png)
     
 
 
@@ -473,7 +481,7 @@ plt.show()
 
 
     
-![png](saas_eda_files/saas_eda_17_0.png)
+![png](saas_eda_files/saas_eda_18_0.png)
     
 
 
@@ -519,15 +527,229 @@ print(df.groupby('churn')[remaining_metrics].mean().round(2))
     
 
 ### Key Takeaway: Billing Friction, Inactivity, and Tenure
-* **Observation:** Churned users average 34.0 median days since their last login (vs. 22.0 days for active users) and 3.0 median payment failures (vs. 2.0 for active users). Meanwhile, median tenure sits at exactly 18.0 months for both groups.
-* **So What:** Long-term customers are just as likely to cancel as newer ones. Real retention risks come from inactivity past 30 days and repeated billing failures—meaning automated re-engagement emails at day 25 of inactivity and better failed-payment recovery after the 2nd failure can directly reduce churn.
 
-## Summary 
-* **Baseline Churn:** 57.32% (1,605 of 2,800 subscribers).
-* **Non-Drivers:** Subscription tier (`plan_type`) and account age (`tenure_months`) show nearly identical rates across active and churned groups.
-* **Top 4 Churn Drivers:**
-  1. **Account Inactivity:** Last login exceeding 30 days (median 34 days for churned users).
-  2. **Support Friction:** Reaching 4 to 5+ support tickets (median 5 tickets vs. 3 for active).
-  3. **Billing Failures:** Hitting 3+ payment failures (median 3 vs. 2 for active).
+- **Observation:** Churned users show a median of 34.0 days since their last login (vs. 22.0 days for active users) and 3.0 median payment failures (vs. 2.0 for active users). Meanwhile, median tenure sits at 18.0 months for both groups.
+- **So What:** Long-term customers churn at rates similar to newer ones, whereas higher churn risk is associated with inactivity past 30 days and repeated billing failures. Because cross-sectional snapshot data establishes behavioral association rather than proven causation, automated re-engagement nudges at day 25 of inactivity and proactive failed-payment recovery after the 2nd failure should be evaluated as proposed interventions via A/B testing.
+
+
+```python
+# Summary tables for payment failures and support tickets
+for col in ['payment_failures', 'support_tickets']:
+    breakdown = (
+        df.groupby(col)
+          .agg(
+              total_customers=('user_id', 'count'),
+              churned_customers=('churn', lambda s: (s == 'Yes').sum())
+          )
+          .reset_index()
+    )
+    breakdown['churn_share_pct'] = (
+        breakdown['churned_customers'] / breakdown['total_customers'] * 100
+    ).round(2)
+    breakdown['pp_change'] = breakdown['churn_share_pct'].diff().round(2)
+    print(f"\n=== Churn Breakdown by {col} ===")
+    display(breakdown)
+```
+
+    
+    === Churn Breakdown by payment_failures ===
+    
+
+
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>payment_failures</th>
+      <th>total_customers</th>
+      <th>churned_customers</th>
+      <th>churn_share_pct</th>
+      <th>pp_change</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>0</td>
+      <td>442</td>
+      <td>175</td>
+      <td>39.59</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>1</td>
+      <td>496</td>
+      <td>199</td>
+      <td>40.12</td>
+      <td>0.53</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>2</td>
+      <td>478</td>
+      <td>307</td>
+      <td>64.23</td>
+      <td>24.11</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>3</td>
+      <td>471</td>
+      <td>316</td>
+      <td>67.09</td>
+      <td>2.86</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>4</td>
+      <td>453</td>
+      <td>301</td>
+      <td>66.45</td>
+      <td>-0.64</td>
+    </tr>
+    <tr>
+      <th>5</th>
+      <td>5</td>
+      <td>460</td>
+      <td>307</td>
+      <td>66.74</td>
+      <td>0.29</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+
+    
+    === Churn Breakdown by support_tickets ===
+    
+
+
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>support_tickets</th>
+      <th>total_customers</th>
+      <th>churned_customers</th>
+      <th>churn_share_pct</th>
+      <th>pp_change</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>0</td>
+      <td>345</td>
+      <td>158</td>
+      <td>45.80</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>1</td>
+      <td>343</td>
+      <td>178</td>
+      <td>51.90</td>
+      <td>6.10</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>2</td>
+      <td>306</td>
+      <td>154</td>
+      <td>50.33</td>
+      <td>-1.57</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>3</td>
+      <td>304</td>
+      <td>153</td>
+      <td>50.33</td>
+      <td>0.00</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>4</td>
+      <td>284</td>
+      <td>159</td>
+      <td>55.99</td>
+      <td>5.66</td>
+    </tr>
+    <tr>
+      <th>5</th>
+      <td>5</td>
+      <td>294</td>
+      <td>200</td>
+      <td>68.03</td>
+      <td>12.04</td>
+    </tr>
+    <tr>
+      <th>6</th>
+      <td>6</td>
+      <td>345</td>
+      <td>220</td>
+      <td>63.77</td>
+      <td>-4.26</td>
+    </tr>
+    <tr>
+      <th>7</th>
+      <td>7</td>
+      <td>289</td>
+      <td>185</td>
+      <td>64.01</td>
+      <td>0.24</td>
+    </tr>
+    <tr>
+      <th>8</th>
+      <td>8</td>
+      <td>290</td>
+      <td>198</td>
+      <td>68.28</td>
+      <td>4.27</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+
+## Summary
+
+- **Baseline Churn:** 57.32% (1,605 of 2,800 subscribers).
+- **Non-Drivers:** Subscription tier (`plan_type`) and account age (`tenure_months`) show nearly identical churn shares across active and churned groups.
+- **Top 4 Associated Churn Drivers:**
+  1. **Account Inactivity:** Last login exceeding 30 days (median 34 days for churned users vs. 22 days for active users).
+  2. **Support Friction:** Reaching 4 to 5+ support tickets (median 5 tickets vs. 3 for active; churn share ranges from 45.80%–55.99% across 0–4 tickets before rising to 68.03% at 5 tickets).
+  3. **Billing Failures:** The largest single-step jump occurs between 1 failed payment (199 of 496, 40.12%) and 2 failed payments (307 of 478, 64.23%)—a 24.1 percentage-point increase—reaching 66.11% across all 808 customers with 2+ failures.
   4. **Low Weekly Usage:** Dropping below 8 hours/week (25% of churned users log 5.1 hours or less).
-
+- **Proposed Interventions to A/B Test:** Because this dataset is a cross-sectional snapshot, these findings reflect behavioral associations rather than proven causation. Priority experiments include testing proactive billing recovery workflows immediately after a **2nd failed payment** and automated re-engagement nudges after **25 days of inactivity**.
