@@ -528,8 +528,8 @@ print(df.groupby('churn')[remaining_metrics].mean().round(2))
 
 ### Key Takeaway: Billing Friction, Inactivity, and Tenure
 
-- **Observation:** Churned users show a median of 34.0 days since their last login (vs. 22.0 days for active users) and 3.0 median payment failures (vs. 2.0 for active users). Meanwhile, median tenure sits at 18.0 months for both groups.
-- **So What:** Long-term customers churn at rates similar to newer ones, whereas higher churn risk is associated with inactivity past 30 days and repeated billing failures. Because cross-sectional snapshot data establishes behavioral association rather than proven causation, automated re-engagement nudges at day 25 of inactivity and proactive failed-payment recovery after the 2nd failure should be evaluated as proposed interventions via A/B testing.
+- **Observation:** Churned users show a median of 34.0 days since their last login (vs. 22.0 days for active users) and 3.0 median payment failures (vs. 2.0 for active users).
+- **So What:** Median tenure was 18 months for both active and churned customers, whereas higher churn risk is associated with inactivity past 30 days and repeated billing failures. Because cross-sectional snapshot data establishes behavioral association rather than proven causation, automated re-engagement nudges at day 25 of inactivity and proactive failed-payment recovery after the 2nd failure should be evaluated as proposed interventions via A/B testing.
 
 
 ```python
